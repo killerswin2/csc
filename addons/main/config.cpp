@@ -1,6 +1,6 @@
 class CfgPatches {
 	class csc_plugin { 
-		name = "Community Scripts"; 
+		name = "Community Scripts Commands"; 
 		units[] = {};
 		weapons[] = {};
 		requiredVersion = 1.82;
