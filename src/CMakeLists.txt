@@ -8,6 +8,9 @@ SOURCE_GROUP("src" FILES ${INTERCEPT_PLUGIN_SOURCES})
 file(GLOB INTERCEPT_PLUGIN_GEOMERTY_SOURCES "Geometry/*.cpp" "Geometry/*.hpp" "Geometry/*.h")
 SOURCE_GROUP("src/Geometry" FILES ${INTERCEPT_PLUGIN_GEOMERTY_SOURCES})
 
+file(GLOB INTERCEPT_PLUGIN_GEOMERTY_SOURCES "Json/*.cpp" "Json/*.hpp" "Json/*.h")
+SOURCE_GROUP("src/Json" FILES ${INTERCEPT_PLUGIN_GEOMERTY_SOURCES})
+
 #If you want to split your source files into different directories you can do so here
 
 #The SOURCE_GROUP string is the directory it will display as inside your visual studio.
@@ -42,6 +45,7 @@ SOURCE_GROUP("intercept" FILES ${INTERCEPT_HOST_SOURCES})
 add_library( ${INTERCEPT_PLUGIN_NAME} SHARED ${INTERCEPT_PLUGIN_SOURCES} ${INTERCEPT_HOST_SOURCES} ${INTERCEPT_PLUGIN_GEOMERTY_SOURCES})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${INTERCEPT_INCLUDE_PATH})
+target_include_directories(${INTERCEPT_PLUGIN_NAME} PUBLIC lib/json/single_include)
 
 set_target_properties(${INTERCEPT_PLUGIN_NAME} PROPERTIES PREFIX "")
 set_target_properties(${INTERCEPT_PLUGIN_NAME} PROPERTIES FOLDER "${CMAKE_PROJECT_NAME}")
