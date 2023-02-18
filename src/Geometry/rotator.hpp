@@ -1,3 +1,6 @@
+#ifndef ROTATOR_H
+#define ROTATOR_H
+
 #include <intercept.hpp>
 
 
@@ -12,3 +15,5 @@ namespace Rotation
 
 
 
+
+#endif // !ROTATOR_H
