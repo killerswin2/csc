@@ -59,3 +59,13 @@ else()
 	set(CMAKE_CXX_FLAGS_RELEASE "/MT /Zi /O2 /Ob1 /EHsc /MP") #with debug info
 	set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/OPT:REF /DEBUG:FULL") 
 endif()
+
+set(FILE_PATH "" CACHE FILEPATH "E:/SteamLibrary/steamapps/common/Arma 3/@csc")
+
+find_program(POWERSHELL NAMES powershell)
+find_program(POWERSHELL_EXEC NAMES "install.ps1" PATHS "..")
+message(${POWERSHELL_EXEC})
+
+add_custom_command(TARGET ${INTERCEPT_PLUGIN_NAME} 
+					POST_BUILD
+					COMMAND ${POWERSHELL} ${POWERSHELL_EXEC} -installPath "E:/SteamLibrary/steamapps/common")
