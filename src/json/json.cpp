@@ -375,6 +375,75 @@ game_value jsonDump(game_value_parameter jsonArray)
 }
 
 
+game_value is_empty_json_array(game_value_parameter jsonArray)
+{
+	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+	return jsonArrayPointer->jsonArray.empty();
+
+}
+
+//returns the count of elements with key
+game_value count_json_array_key(game_value_parameter jsonArray, game_value_parameter key)
+{
+	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+	return jsonArrayPointer->jsonArray.count(key);
+}
+
+
+// returns number of elements
+game_value count_json_array(game_value_parameter jsonArray)
+{
+	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+	return jsonArrayPointer->jsonArray.size();
+}
+
+game_value last_element_json_array(game_value_parameter jsonArray)
+{
+	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+	if (jsonArrayPointer->jsonArray.empty())
+	{
+		return -1;
+	}
+	else
+	{
+		auto back = jsonArrayPointer->jsonArray.back();
+		if (back.is_string())
+		{
+			return game_value(new game_data_string(back));
+		}
+
+		if (back.is_boolean())
+		{
+			return game_value(new game_data_bool(back));
+		}
+
+		if (back.is_number())
+		{
+			return game_value(new game_data_number(back));
+		}
+
+		if (back.is_array())
+		{
+			return game_value(new game_data_json_array(back));
+		}
+
+		if (back.is_object())
+		{
+			return game_value(new game_data_json(back));
+		}
+
+	}
+	// should not reach here
+	return "reached end here";
+}
+
+game_value clear_json_array(game_value_parameter jsonArray)
+{
+	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+	jsonArrayPointer->jsonArray.clear();
+	return {};
+}
+
 void json_game_data::jsonArray::pre_start()
 {
 	auto codeType = intercept::client::host::register_sqf_type("JSONARRAY"sv, "jsonArray"sv, "json array stuff", "jsonArray"sv, create_game_data_json_array);
@@ -384,5 +453,9 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("createJsonArray", "create a json array", userFunctionWrapper<create_json_array>, codeType.first);
 	commands.addCommand("pushBack","push back element to json array", userFunctionWrapper<push_back_json_array>, game_data_type::NOTHING, codeType.first, game_data_type::ANY);
 	commands.addCommand("dumpToFile", "dumps object to file", userFunctionWrapper<jsonDump>, game_data_type::NOTHING, codeType.first);
-
+	commands.addCommand("empty", "checks if a json array is empty", userFunctionWrapper<is_empty_json_array>, game_data_type::BOOL, codeType.first);
+	commands.addCommand("count", "returns number keys", userFunctionWrapper<count_json_array>, game_data_type::SCALAR, codeType.first);
+	commands.addCommand("count", "returns number elements with key", userFunctionWrapper<count_json_array_key>, game_data_type::SCALAR, codeType.first, game_data_type::STRING);
+	commands.addCommand("back", "returns the last element in the json array", userFunctionWrapper<last_element_json_array>, game_data_type::ANY, codeType.first);
+	commands.addCommand("clear", "clears the contents of the json array", userFunctionWrapper<clear_json_array>, game_data_type::NOTHING, codeType.first);
 }
