@@ -1,6 +1,7 @@
 #include <intercept.hpp>
 #include "commands.hpp"
 #include "Geometry/rotator.hpp"
+#include "Json/json.hpp"
 
 // keep this global, so commands can't go out of scope.
 Commands& commands = Commands::get();
@@ -15,6 +16,8 @@ void intercept::register_interfaces() {
 
 void intercept::pre_start() {
     Rotation::Rotator::pre_start();
+    json_game_data::json::pre_start();
+    json_game_data::jsonArray::pre_start();
 }
 
 void intercept::pre_init() {
