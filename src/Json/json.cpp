@@ -471,6 +471,13 @@ game_value last_element_json_array(game_value_parameter jsonArray)
 	return "reached end here";
 }
 
+/*
+ * @brief  clears the json array to it's default state
+ * @detail clearing the json array sets the array to []
+ * @param jsonArray - json array to work on
+ * @author Killerswin2
+ * @return game_value - nothing
+*/
 game_value clear_json_array(game_value_parameter jsonArray)
 {
 	if (jsonArray.is_nil())
@@ -482,6 +489,13 @@ game_value clear_json_array(game_value_parameter jsonArray)
 	return {};
 }
 
+/*
+ * @brief  json array to rv array convertor
+ * @detail converts each element to the right rv type. Strings, scalars, bool, and nested arrays
+ * @param jsonArray - json array to work on
+ * @param list - intercept auto_array
+ * @author Killerswin2
+*/
 void json_array_convertor(nlohmann::json& element, intercept::types::auto_array<game_value>& list)
 {
 	if (element.is_string())
@@ -520,7 +534,13 @@ void json_array_convertor(nlohmann::json& element, intercept::types::auto_array<
 	}
 }
 
-
+/*
+ * @brief handles top level array but not nested arrays.
+ * @detail nested arrays are handled by <json_array_convertor>
+ * @param jsonArray - json array to work on
+ * @author Killerswin2
+ * @return game_value
+*/
 game_value convert_json_array_to_array(game_value_parameter jsonArray)
 {
 	
@@ -537,6 +557,8 @@ game_value convert_json_array_to_array(game_value_parameter jsonArray)
 
 	nlohmann::json::iterator iter = jsonArrayPointer->jsonArray.begin();
 	nlohmann::json::const_iterator endIt = jsonArrayPointer->jsonArray.end();
+
+	// go through the array, and convert the elements
 
 	while (iter != endIt)
 	{
