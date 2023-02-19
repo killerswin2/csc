@@ -4,6 +4,9 @@
 #include <istream>
 #include <fstream>
 #include <future>
+#include <vector>
+#include <stack>
+#include <queue>
 
 #ifdef _WIN32 
 #define WIN32_LEAN_AND_MEAN
@@ -172,13 +175,13 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 	game_data* GameDataPointer = element.data.get();
 	if (!canJson(element))
 	{
-		intercept::sqf::system_chat("Can't Json This");
+		jsonArray.push_back(intercept::sqf::str(element));
+		
 	}
 
 	//json data type
 	if (GameDataPointer->type() == game_data_json_type)
 	{
-		intercept::sqf::system_chat("json data");
 		auto jsonObjectPointer = static_cast<game_data_json*>(GameDataPointer);
 		jsonArray.push_back(jsonObjectPointer->jsonObject);
 		return;
@@ -186,7 +189,6 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 	// json array
 	if (GameDataPointer->type() == game_data_json_array_type)
 	{
-		intercept::sqf::system_chat("json array");
 		auto jsonObjectPointer = static_cast<game_data_json_array*>(GameDataPointer);
 		jsonArray.push_back(jsonObjectPointer->jsonArray);
 		return;
@@ -195,7 +197,6 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 	// string
 	if (element.type() == game_data_string::type_def)
 	{
-		intercept::sqf::system_chat("RV string");
 		auto gameDataStringPointer = static_cast<game_data_string*>(GameDataPointer);
 		jsonArray.push_back(gameDataStringPointer->raw_string);
 		return;
@@ -204,7 +205,6 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 	// number / scalar
 	if (element.type() == game_data_number::type_def)
 	{
-		intercept::sqf::system_chat("RV scalar");
 		auto gameDataNumberPointer = static_cast<game_data_number*>(GameDataPointer);
 		jsonArray.push_back(gameDataNumberPointer->number);
 		return;
@@ -213,7 +213,6 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 	// bool
 	if (element.type() == game_data_bool::type_def)
 	{
-		intercept::sqf::system_chat("RV bool");
 		auto gameDataBoolPointer = static_cast<game_data_bool*>(GameDataPointer);
 		jsonArray.push_back(gameDataBoolPointer->val);
 		return;
@@ -248,7 +247,6 @@ nlohmann::json process_array(game_value& element)
 			{
 				push_back_internal(arrayElement, jsonArray);
 			}
-			//intercept::sqf::system_chat(intercept::sqf::str(arrayElement));
 		}
 
 	}
@@ -294,7 +292,6 @@ game_value push_back_json_array(game_value_parameter jsonArray, game_value_param
 	if (rightArg.type() == game_data_array::type_def)
 	{
 		// this is going to be slow. like very slow
-		intercept::sqf::system_chat("RV array");
 		nlohmann::json jsonArray = nlohmann::json::array();
 
 		//convert to array.
@@ -312,7 +309,6 @@ game_value push_back_json_array(game_value_parameter jsonArray, game_value_param
 			{
 				push_back_internal(arrayElement, jsonArray);
 			}
-			intercept::sqf::system_chat(intercept::sqf::str(arrayElement));
 		}
 		jsonPointer->jsonArray.push_back(jsonArray);
 
@@ -377,28 +373,66 @@ game_value jsonDump(game_value_parameter jsonArray)
 
 game_value is_empty_json_array(game_value_parameter jsonArray)
 {
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
 	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
 	return jsonArrayPointer->jsonArray.empty();
 
 }
 
-//returns the count of elements with key
+
+/*
+ * @brief  returns the count of elements with key
+ * @detail this is might not be working right for array objects
+ * @param jsonArray - json array to count
+ * @param key - string key to search/count for
+ * @author Killerswin2
+ * @return float of size of array
+*/
 game_value count_json_array_key(game_value_parameter jsonArray, game_value_parameter key)
 {
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
 	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
 	return jsonArrayPointer->jsonArray.count(key);
 }
 
 
-// returns number of elements
+/*
+* @brief  returns number of elements
+* @detail 
+* @param jsonArray - json array to count
+* @author Killerswin2
+* @return float of size of array
+*/
 game_value count_json_array(game_value_parameter jsonArray)
 {
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
 	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
 	return jsonArrayPointer->jsonArray.size();
 }
 
+/*
+ * @brief  returns the last element in the json array
+ * @detail returns the last element in the json array. Depending on the type of "object" in the element it can return 
+ * a string, bool, number, json array, or json object
+ * @param jsonArray - json array to work on
+ * @author Killerswin2
+ * @return game_value
+*/
 game_value last_element_json_array(game_value_parameter jsonArray)
 {
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
 	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
 	if (jsonArrayPointer->jsonArray.empty())
 	{
@@ -439,9 +473,78 @@ game_value last_element_json_array(game_value_parameter jsonArray)
 
 game_value clear_json_array(game_value_parameter jsonArray)
 {
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
 	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
 	jsonArrayPointer->jsonArray.clear();
 	return {};
+}
+
+void json_array_convertor(nlohmann::json& element, intercept::types::auto_array<game_value>& list)
+{
+	if (element.is_string())
+	{
+		list.push_back(game_value(new game_data_string(element)));
+	}
+
+	if (element.is_boolean())
+	{
+		list.push_back(game_value(new game_data_bool(element)));
+	}
+
+	if (element.is_number())
+	{
+		list.push_back(game_value(new game_data_number(element)));
+	}
+
+	if (element.is_array())
+	{
+		intercept::types::auto_array<game_value> nestList;
+		nlohmann::json::iterator iter = element.begin();
+		nlohmann::json::const_iterator endIt = element.end();
+
+		while (iter != endIt)
+		{
+			json_array_convertor(*iter, nestList);
+			iter++;
+		}
+		list.push_back(nestList);
+	}
+
+	//@TODO handled is_object case
+	if (element.is_object())
+	{
+		list.push_back(game_value(new game_data_json(element)));
+	}
+}
+
+
+game_value convert_json_array_to_array(game_value_parameter jsonArray)
+{
+	
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
+	//auto& array = rightArg.to_array();
+
+	// create game_value array
+	intercept::types::auto_array<game_value> list;
+
+	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+
+	nlohmann::json::iterator iter = jsonArrayPointer->jsonArray.begin();
+	nlohmann::json::const_iterator endIt = jsonArrayPointer->jsonArray.end();
+
+	while (iter != endIt)
+	{
+		json_array_convertor(*iter, list);
+		iter++;
+	}
+
+	return game_value(list);
 }
 
 void json_game_data::jsonArray::pre_start()
@@ -458,4 +561,5 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("count", "returns number elements with key", userFunctionWrapper<count_json_array_key>, game_data_type::SCALAR, codeType.first, game_data_type::STRING);
 	commands.addCommand("back", "returns the last element in the json array", userFunctionWrapper<last_element_json_array>, game_data_type::ANY, codeType.first);
 	commands.addCommand("clear", "clears the contents of the json array", userFunctionWrapper<clear_json_array>, game_data_type::NOTHING, codeType.first);
+	commands.addCommand("toArray", "returns an RV array from a json array", userFunctionWrapper<convert_json_array_to_array>, game_data_type::ARRAY, codeType.first);
 }
