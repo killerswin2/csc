@@ -786,6 +786,37 @@ game_value insert_json_array(game_value_parameter jsonArray, game_value_paramete
 	return -1;
 }
 
+game_value erase_json_array(game_value_parameter jsonArray, game_value_parameter rvArray)
+{
+	// not nil and array has at least two elements
+	if (jsonArray.is_nil() && rvArray.size() > 1)
+	{
+		return {};
+	}
+	auto gameDataJsonPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+	int startSlice = rvArray[0];
+	int endSlice = rvArray[1];
+
+	//+1 for iter needs of end+1
+	auto iter = gameDataJsonPointer->jsonArray.erase(gameDataJsonPointer->jsonArray.begin() + startSlice, gameDataJsonPointer->jsonArray.begin() + endSlice + 1);
+
+	return static_cast<int>(iter - gameDataJsonPointer->jsonArray.begin());
+}
+
+game_value erase_json_array_index(game_value_parameter jsonArray, game_value_parameter index)
+{
+	// not nil and array has at least two elements
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
+	auto gameDataJsonPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+
+	gameDataJsonPointer->jsonArray.erase(index);
+
+	return {};
+}
+
 void json_game_data::jsonArray::pre_start()
 {
 	auto codeType = intercept::client::host::register_sqf_type("JSONARRAY"sv, "jsonArray"sv, "json array stuff", "jsonArray"sv, create_game_data_json_array);
@@ -802,5 +833,7 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("clear", "clears the contents of the json array", userFunctionWrapper<clear_json_array>, game_data_type::NOTHING, codeType.first);
 	commands.addCommand("toArray", "returns an RV array from a json array", userFunctionWrapper<convert_json_array_to_array>, game_data_type::ARRAY, codeType.first);
 	commands.addCommand("insert", "inserts element in to the json array", userFunctionWrapper<insert_json_array>, game_data_type::SCALAR, codeType.first, game_data_type::ARRAY);
+	commands.addCommand("erase", "removes element from JSON element range", userFunctionWrapper<erase_json_array>, game_data_type::SCALAR, codeType.first, game_data_type::ARRAY);
+	commands.addCommand("erase", "removes an element from a JSON array by index", userFunctionWrapper<erase_json_array_index>, game_data_type::NOTHING, codeType.first, game_data_type::SCALAR);
 
 }
