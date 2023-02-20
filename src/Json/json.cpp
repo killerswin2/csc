@@ -69,8 +69,6 @@ void json_game_data::json::pre_start()
 	//commands.addCommand("emplace", "inserts a new element into a JSON object in-place");
 	//commands.addCommand("emplaceBack", "creates a JSON value from the Args to the end of object");
 	//commands.addCommand("empty", "checks if the JSON object has no elements");
-	//commands.addCommand("erase", "removes element from JSON by key");
-	//commands.addCommand("erase", "removes element from JSON element range");
 	//commands.addCommand("erase", "removes an element from a JSON array by index");
 	//commands.addCommand("find", "finds an element in a JSON object with a key that was passed");
 	//commands.addCommand("fromBJdata", "deserializes a given input using BJData");
@@ -786,6 +784,14 @@ game_value insert_json_array(game_value_parameter jsonArray, game_value_paramete
 	return -1;
 }
 
+/*
+ * @brief erase from json array a slice of elements
+ * @detail
+ * @param jsonArray - json array to work on
+ * @param rvArray - json slice indices [start, end]
+ * @author Killerswin2
+ * @return game_value
+*/
 game_value erase_json_array(game_value_parameter jsonArray, game_value_parameter rvArray)
 {
 	// not nil and array has at least two elements
@@ -803,6 +809,14 @@ game_value erase_json_array(game_value_parameter jsonArray, game_value_parameter
 	return static_cast<int>(iter - gameDataJsonPointer->jsonArray.begin());
 }
 
+/*
+ * @brief erase from json array by index
+ * @detail
+ * @param jsonArray - json array to work on
+ * @param index - index to erase from json array
+ * @author Killerswin2
+ * @return game_value
+*/
 game_value erase_json_array_index(game_value_parameter jsonArray, game_value_parameter index)
 {
 	// not nil and array has at least two elements
@@ -816,6 +830,20 @@ game_value erase_json_array_index(game_value_parameter jsonArray, game_value_par
 
 	return {};
 }
+
+/*
+ * @brief emplaces to the back of the json array, a json value from the args
+ * @detail
+ * @param jsonArray - json array to emplace back
+ * @param rightArgs - args to construct and emplace back
+ * @author Killerswin2
+ * @return game_value
+*/
+game_value emplace_back_json_array(game_value_parameter jsonArray, game_value_parameter rightArgs)
+{
+
+}
+
 
 void json_game_data::jsonArray::pre_start()
 {
@@ -835,5 +863,6 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("insert", "inserts element in to the json array", userFunctionWrapper<insert_json_array>, game_data_type::SCALAR, codeType.first, game_data_type::ARRAY);
 	commands.addCommand("erase", "removes element from JSON element range", userFunctionWrapper<erase_json_array>, game_data_type::SCALAR, codeType.first, game_data_type::ARRAY);
 	commands.addCommand("erase", "removes an element from a JSON array by index", userFunctionWrapper<erase_json_array_index>, game_data_type::NOTHING, codeType.first, game_data_type::SCALAR);
+	commands.addCommand("emplaceBack", "Creates a JSON value from supplied args", userFunctionWrapper<emplace_back_json_array>, game_data_type::NOTHING, codeType.first, game_data_type::ANY);
 
 }
