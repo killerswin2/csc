@@ -6,7 +6,6 @@
 #include <future>
 #include <vector>
 #include <stack>
-#include <queue>
 
 #ifdef _WIN32 
 #define WIN32_LEAN_AND_MEAN
@@ -215,49 +214,56 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 		jsonArray.push_back(gameDataBoolPointer->val);
 		return;
 	}
-}
-
-//@TODO this needs to be rewritten the take a json array as the second param
- void process_array(game_value& element, nlohmann::json& jsonArray)
-{
-
-	if (canJson(element) && element.type() != game_data_array::type_def)
-	{
-		push_back_internal(element, jsonArray);
-	}
-	
-
-	// RV array
-	if (element.type() == game_data_array::type_def)
-	{
-		nlohmann::json nestedArray;
-		//convert to array.
-		auto& array = element.to_array();
-
-		for (size_t i = 0; i < element.size(); i++)
-		{
-			auto& arrayElement = array[i];
-			intercept::sqf::system_chat(intercept::sqf::str(arrayElement));
-			if (arrayElement.type() == game_data_array::type_def)
-			{
-				process_array(arrayElement, nestedArray);
-			}
-			else
-			{
-				push_back_internal(arrayElement, nestedArray);
-			}
-		}
-		//I forgot to actually push the data to the jsonArray
-		jsonArray.push_back(nestedArray);
-
-	}
 
 	if (!canJson(element))
 	{
 		jsonArray.push_back(intercept::sqf::str(element));
+		return;
 	}
+}
 
 
+void process_array(const game_value& element, nlohmann::json& jsonArray)
+{
+	
+	std::stack<game_value> gameValueStack;
+	std::stack<nlohmann::json> jsonArrayPushBackers;
+
+	size_t index = 0;
+
+	//convert to array.
+	auto& array = element.to_array();
+
+	while (!gameValueStack.empty() || index < array.size())
+	{
+		auto& arrayElement = array[index];
+		if (arrayElement.type() == game_data_array::type_def)
+		{
+			// push to stack if array, game_value and jsonArrayObject
+			gameValueStack.push(arrayElement);
+			jsonArrayPushBackers.push(jsonArray);
+			jsonArray = nlohmann::json::array();
+			array = arrayElement.to_array();
+			index = 0;
+			continue;
+		}
+		else
+		{
+			push_back_internal(arrayElement, jsonArray);
+		}
+
+		if (index == array.size() - 1 && !gameValueStack.empty())
+		{
+			nlohmann::json* temp = &jsonArray;
+			array = gameValueStack.top().to_array();
+			jsonArray = jsonArrayPushBackers.top();
+			gameValueStack.pop();
+			jsonArrayPushBackers.pop();
+			jsonArray.push_back(*temp);
+			index = jsonArray.size();
+		}
+		index++;
+	}
 }
 
 
@@ -278,41 +284,17 @@ game_value push_back_json_array(game_value_parameter jsonArray, game_value_param
 
 	// we need to check the type of data to due specific stuff
 
-	if (canJson(rightArg) && rightArg.type() != game_data_array::type_def)
+	if (rightArg.type() != game_data_array::type_def)
 	{
 		push_back_internal(rightArg, jsonPointer->jsonArray);
-	}
-
-	if (!canJson(rightArg))
-	{
-		jsonPointer->jsonArray.push_back(intercept::sqf::str(rightArg));
 	}
 
 	// array
 	if (rightArg.type() == game_data_array::type_def)
 	{
-		// this is going to be slow. like very slow
 		nlohmann::json jsonArray = nlohmann::json::array();
-
-		//convert to array.
-		auto& array = rightArg.to_array();
-
-
-		for (size_t i = 0; i < rightArg.size(); i++)
-		{
-			auto& arrayElement = array[i];
-			intercept::sqf::system_chat(intercept::sqf::str(arrayElement));
-			if (arrayElement.type() == game_data_array::type_def)
-			{
-				process_array(arrayElement, jsonArray);
-			} 
-			else
-			{
-				push_back_internal(arrayElement, jsonArray);
-			}
-		}
+		process_array(rightArg, jsonArray);
 		jsonPointer->jsonArray.push_back(jsonArray);
-
 	}
 
 
@@ -624,7 +606,7 @@ game_value insert_json_array(game_value_parameter jsonArray, game_value_paramete
 					return -2;
 				}
 
-				iter = jsonArrayPointer->jsonArray.insert(jsonArrayPointer->jsonArray.begin() + index, jsonObjectPointer->jsonArray.begin() + sliceStart, jsonObjectPointer->jsonArray.begin() + sliceEnd + 1);
+				iter = jsonArrayPointer->jsonArray.insert(jsonArrayPointer->jsonArray.begin() + index, jsonObjectPointer->jsonArray.begin() + sliceStart, jsonObjectPointer->jsonArray.begin() + sliceEnd);
 				break;
 			}
 		}
@@ -658,7 +640,7 @@ game_value insert_json_array(game_value_parameter jsonArray, game_value_paramete
 					return -2;
 				}
 
-				iter = jsonArrayPointer->jsonArray.insert(jsonArrayPointer->jsonArray.begin() + index, jsonObjectPointer->jsonObject.begin() + sliceStart, jsonObjectPointer->jsonObject.begin() + sliceEnd + 1);
+				iter = jsonArrayPointer->jsonArray.insert(jsonArrayPointer->jsonArray.begin() + index, jsonObjectPointer->jsonObject.begin() + sliceStart, jsonObjectPointer->jsonObject.begin() + sliceEnd);
 				break;
 			}
 		}
@@ -671,20 +653,7 @@ game_value insert_json_array(game_value_parameter jsonArray, game_value_paramete
 		nlohmann::json convertedArray;
 
 		auto& array = rvArray[valueIndex].to_array();
-
-		for (size_t i = 0; i < rvArray[valueIndex].size(); i++)
-		{
-			auto& element = array[i];
-			if (element.type() == game_data_array::type_def)
-			{
-				process_array(element, convertedArray);
-			}
-			else
-			{
-				push_back_internal(element, convertedArray);
-
-			}
-		}
+		process_array(rvArray[valueIndex], convertedArray);
 
 		// grab the number from index zero, cast to int, then insert createdArray
 		auto gameDataNumberPointer = static_cast<game_data_number*>(rvArray[0].data.get());
@@ -709,7 +678,7 @@ game_value insert_json_array(game_value_parameter jsonArray, game_value_paramete
 					return -2;
 				}
 
-				iter = jsonArrayPointer->jsonArray.insert(jsonArrayPointer->jsonArray.begin() + index, convertedArray.begin() + sliceStart, convertedArray.begin() + sliceEnd + 1);
+				iter = jsonArrayPointer->jsonArray.insert(jsonArrayPointer->jsonArray.begin() + index, convertedArray.begin() + sliceStart, convertedArray.begin() + sliceEnd);
 				break;
 			}
 		}
@@ -841,7 +810,7 @@ game_value erase_json_array_index(game_value_parameter jsonArray, game_value_par
 */
 game_value emplace_back_json_array(game_value_parameter jsonArray, game_value_parameter rightArgs)
 {
-
+	return {};
 }
 
 
