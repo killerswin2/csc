@@ -1,6 +1,10 @@
 # Community Scripting Commands
 Community Scripts is a intercept project designed to provided Arma 3 sqf developers QOL scripts, that aren't currently in the RV engine.
 
+# What is the purpose
+CSC mainly is designed to aid the developers sqf mission creators. Whether by providing json support in sqf or by adding more math commands,
+the mission is to reduce the amount of times or work that a developer will need to build a complex system in sqf.
+
 # Building
 Building CSC requires
 - CMake
