@@ -6,6 +6,7 @@
 #include <future>
 #include <vector>
 #include <stack>
+#include <filesystem>
 
 #ifdef _WIN32 
 #define WIN32_LEAN_AND_MEAN
@@ -970,6 +971,255 @@ game_value emplace_back_json_array(game_value_parameter jsonArray, game_value_pa
 }
 
 
+/*
+ * @brief swap the json arrays
+ * @detail
+ * @param leftArray - left json array
+ * @param rightArray - right json array
+ * @author Killerswin2
+ * @return game_value
+*/
+game_value swap_json_array(game_value_parameter leftArray, game_value_parameter rightArray)
+{
+	if (leftArray.is_nil() || rightArray.is_nil())
+	{
+		return {};
+	}
+
+	auto leftArrayPointer = static_cast<game_data_json_array*>(leftArray.data.get());
+	auto rightArrayPointer = static_cast<game_data_json_array*>(rightArray.data.get());
+
+	//swap here
+	leftArrayPointer->jsonArray.swap(rightArrayPointer->jsonArray);
+}
+
+/*
+ * @brief parse json string to json data
+ * @detail
+ * @param jsonArray - json array
+ * @param string - json string that we will parse
+ * @author Killerswin2
+ * @return game_value
+*/
+game_value parse_json(game_value_parameter jsonArray, game_value_parameter string)
+{
+	if (jsonArray.is_nil() || string.is_nil())
+	{
+		return {};
+	}
+
+	// underlining json array/object
+	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+
+	// return if we can't accept the data
+	if (!nlohmann::json::accept(string))
+	{
+		return {};
+	}
+
+	// parse
+	try {
+		jsonArrayPointer->jsonArray = nlohmann::json::parse(string);
+	}
+	catch (nlohmann::json::parse_error& error)
+	{
+		//@TODO gs notify user of bad parse of data
+		return {};
+	}
+}
+
+
+/*
+ * @brief parse filepath into json data (Deserializes)
+ * @detail supports plain text, bjdata, bson, cbor, msgpack, and ubjson
+ * @param filepath - filepath
+ * @param type - the type of file
+ * @author Killerswin2
+ * @return game_value
+*/
+game_value parse_json_file_internaly( const game_value& filepath, const char& type)
+{
+	if (filepath.is_nil())
+	{
+		return {};
+	}
+	//json pointer
+	nlohmann::json jsonArray;
+
+	// determine if local file or external
+	bool packedFile = intercept::sqf::file_exists(filepath);
+
+	//check that the file even exists externally
+	if (!packedFile)
+	{
+		std::filesystem::path path(static_cast<game_data_string*>(filepath.data.get())->raw_string.c_str());
+
+		if (!std::filesystem::exists(path))
+		{
+			//@TODO tell user of bad path
+			return {};
+		}
+
+		std::ifstream file;
+		file.open(filepath, std::ios::in);
+		if (file.good())
+		{
+			//@TODO catch errors here
+			switch (type)
+			{
+			case 0: {jsonArray = nlohmann::json::parse(file); break; };
+			case 1: {jsonArray = nlohmann::json::from_bjdata(file); break; };
+			case 2: {jsonArray = nlohmann::json::from_bson(file); break; };
+			case 3: {jsonArray = nlohmann::json::from_cbor(file); break; };
+			case 4: {jsonArray = nlohmann::json::from_msgpack(file); break; };
+			case 5: {jsonArray = nlohmann::json::from_ubjson(file); break; };
+			
+			}
+		}
+	}
+	else
+	{
+		auto data = intercept::sqf::load_file(filepath);
+
+		switch (type)
+		{
+		case 0: {jsonArray = nlohmann::json::parse(data); break; };
+		case 1: {jsonArray = nlohmann::json::from_bjdata(data); break; };
+		case 2: {jsonArray = nlohmann::json::from_bson(data); break; };
+		case 3: {jsonArray = nlohmann::json::from_cbor(data); break; };
+		case 4: {jsonArray = nlohmann::json::from_msgpack(data); break; };
+		case 5: {jsonArray = nlohmann::json::from_ubjson(data); break; };
+		}
+	}
+	return game_value(new game_data_json_array(jsonArray));
+}
+
+
+/*
+ * @brief parse filepath into json data (Deserializes)
+ * @detail plain text
+ * @param filepath - filepath
+ * @author Killerswin2
+ * @return game_value
+*/
+game_value parse_json_file(game_value_parameter filepath)
+{
+	if (filepath.is_nil())
+	{
+		return {};
+	}
+	//@TODO change this to an enum maybe?
+	// type 0 is plain text file
+	constexpr const char type = 0;
+
+	return parse_json_file_internaly(filepath, type);
+}
+
+/*
+ * @brief parse filepath into json data (Deserializes)
+ * @detail bjdata
+ * @param filepath - filepath
+ * @author Killerswin2
+ * @return game_value
+ * <a href="https://json.nlohmann.me/features/binary_formats/bjdata/"> BJData </a>
+*/ 
+game_value parse_json_file_bjdata(game_value_parameter filepath)
+{
+	if (filepath.is_nil())
+	{
+		return {};
+	}
+	//@TODO change this to an enum maybe?
+	// type 0 is plain text file
+	constexpr const char type = 1;
+
+	return parse_json_file_internaly(filepath, type);
+}
+
+/*
+ * @brief parse filepath into json data (Deserializes)
+ * @detail bson
+ * @param filepath - filepath
+ * @author Killerswin2
+ * @return game_value
+ * <a href="https://json.nlohmann.me/features/binary_formats/bson/"> BSON </a>
+*/
+game_value parse_json_file_bson(game_value_parameter filepath)
+{
+	if (filepath.is_nil())
+	{
+		return {};
+	}
+	//@TODO change this to an enum maybe?
+	// type 0 is plain text file
+	constexpr const char type = 2;
+
+	return parse_json_file_internaly(filepath, type);
+}
+
+/*
+ * @brief parse filepath into json data (Deserializes)
+ * @detail CBOR
+ * @param filepath - filepath
+ * @author Killerswin2
+ * @return game_value
+ * <a href="https://json.nlohmann.me/features/binary_formats/cbor/"> CBOR </a>
+*/
+game_value parse_json_file_cbor(game_value_parameter filepath)
+{
+	if (filepath.is_nil())
+	{
+		return {};
+	}
+	//@TODO change this to an enum maybe?
+	// type 0 is plain text file
+	constexpr const char type = 3;
+
+	return parse_json_file_internaly(filepath, type);
+}
+
+/*
+ * @brief parse filepath into json data (Deserializes)
+ * @detail MessagePack
+ * @param filepath - filepath
+ * @author Killerswin2
+ * @return game_value
+ * <a href="https://json.nlohmann.me/features/binary_formats/messagepack/"> MessagePack </a>
+*/
+game_value parse_json_file_msgpack(game_value_parameter filepath)
+{
+	if (filepath.is_nil())
+	{
+		return {};
+	}
+	//@TODO change this to an enum maybe?
+	// type 0 is plain text file
+	constexpr const char type = 4;
+
+	return parse_json_file_internaly(filepath, type);
+}
+
+/*
+ * @brief parse filepath into json data (Deserializes)
+ * @detail UBJSON
+ * @param filepath - filepath
+ * @author Killerswin2
+ * @return game_value
+ * <a href="https://json.nlohmann.me/features/binary_formats/ubjson/"> UBJSON </a>
+*/
+game_value parse_json_file_ubjson(game_value_parameter filepath)
+{
+	if (filepath.is_nil())
+	{
+		return {};
+	}
+	//@TODO change this to an enum maybe?
+	// type 0 is plain text file
+	constexpr const char type = 5;
+
+	return parse_json_file_internaly(filepath, type);
+}
+
 void json_game_data::jsonArray::pre_start()
 {
 	auto codeType = intercept::client::host::register_sqf_type("JSONARRAY"sv, "jsonArray"sv, "json array stuff", "jsonArray"sv, create_game_data_json_array);
@@ -989,5 +1239,13 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("erase", "removes element from JSON element range", userFunctionWrapper<erase_json_array>, game_data_type::SCALAR, codeType.first, game_data_type::ARRAY);
 	commands.addCommand("erase", "removes an element from a JSON array by index", userFunctionWrapper<erase_json_array_index>, game_data_type::NOTHING, codeType.first, game_data_type::SCALAR);
 	commands.addCommand("emplaceBack", "Creates a JSON value from supplied args", userFunctionWrapper<emplace_back_json_array>, game_data_type::NOTHING, codeType.first, game_data_type::ARRAY);
+	commands.addCommand("swap", "swaps JSON values", userFunctionWrapper<swap_json_array>, game_data_type::NOTHING, codeType.first, codeType.first);
+	commands.addCommand("parse", "parses strings into json data", userFunctionWrapper<parse_json>, game_data_type::NOTHING, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFile", "parses json files into json data", userFunctionWrapper<parse_json_file>, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileBJData", "parses json BJData files into json data", userFunctionWrapper<parse_json_file_bjdata>, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileBSON", "parses BSON json files into json data", userFunctionWrapper<parse_json_file_bson>, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileCBOR", "parses CBOR json files into json data", userFunctionWrapper<parse_json_file_cbor>, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileMessagePack", "parses MesssagePack json files into json data", userFunctionWrapper<parse_json_file_msgpack>, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileUBJSON", "parses UBJSON json files into json data", userFunctionWrapper<parse_json_file_ubjson>, codeType.first, game_data_type::STRING);
 
 }
