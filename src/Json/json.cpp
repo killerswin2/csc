@@ -1065,30 +1065,44 @@ game_value parse_json_file_internaly( const game_value& filepath, const char& ty
 		if (file.good())
 		{
 			//@TODO catch errors here
-			switch (type)
-			{
-			case 0: {jsonArray = nlohmann::json::parse(file); break; };
-			case 1: {jsonArray = nlohmann::json::from_bjdata(file); break; };
-			case 2: {jsonArray = nlohmann::json::from_bson(file); break; };
-			case 3: {jsonArray = nlohmann::json::from_cbor(file); break; };
-			case 4: {jsonArray = nlohmann::json::from_msgpack(file); break; };
-			case 5: {jsonArray = nlohmann::json::from_ubjson(file); break; };
+			try {
+				switch (type)
+				{
+				case 0: {jsonArray = nlohmann::json::parse(file); break; };
+				case 1: {jsonArray = nlohmann::json::from_bjdata(file); break; };
+				case 2: {jsonArray = nlohmann::json::from_bson(file); break; };
+				case 3: {jsonArray = nlohmann::json::from_cbor(file); break; };
+				case 4: {jsonArray = nlohmann::json::from_msgpack(file); break; };
+				case 5: {jsonArray = nlohmann::json::from_ubjson(file); break; };
+				
+				}
 			
+			}
+			catch (nlohmann::json::exception& error)
+			{
+				// @TODO gs the error and tell the user what happened?
+				return {};
 			}
 		}
 	}
 	else
 	{
 		auto data = intercept::sqf::load_file(filepath);
-
-		switch (type)
+		try {
+			switch (type)
+			{
+			case 0: {jsonArray = nlohmann::json::parse(data); break; };
+			case 1: {jsonArray = nlohmann::json::from_bjdata(data); break; };
+			case 2: {jsonArray = nlohmann::json::from_bson(data); break; };
+			case 3: {jsonArray = nlohmann::json::from_cbor(data); break; };
+			case 4: {jsonArray = nlohmann::json::from_msgpack(data); break; };
+			case 5: {jsonArray = nlohmann::json::from_ubjson(data); break; };
+			}
+		} 
+		catch (nlohmann::json::exception& error)
 		{
-		case 0: {jsonArray = nlohmann::json::parse(data); break; };
-		case 1: {jsonArray = nlohmann::json::from_bjdata(data); break; };
-		case 2: {jsonArray = nlohmann::json::from_bson(data); break; };
-		case 3: {jsonArray = nlohmann::json::from_cbor(data); break; };
-		case 4: {jsonArray = nlohmann::json::from_msgpack(data); break; };
-		case 5: {jsonArray = nlohmann::json::from_ubjson(data); break; };
+			// @TODO gs the error and tell the user what happened?
+			return {};
 		}
 	}
 	return game_value(new game_data_json_array(jsonArray));
