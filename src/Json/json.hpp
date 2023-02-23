@@ -46,7 +46,9 @@ class game_data_json_array : public game_data {
 
 public:
 	game_data_json_array() {}
-	game_data_json_array(nlohmann::json object) : jsonArray{ object } {}
+	game_data_json_array(nlohmann::json object) {
+		jsonArray = object;
+	}
 	void lastRefDeleted() const override { delete this; }
 	const sqf_script_type& type() const override;
 	~game_data_json_array() override {};

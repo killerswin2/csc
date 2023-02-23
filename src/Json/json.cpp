@@ -7,6 +7,7 @@
 #include <vector>
 #include <stack>
 #include <filesystem>
+#include <string>
 
 #ifdef _WIN32 
 #define WIN32_LEAN_AND_MEAN
@@ -991,6 +992,8 @@ game_value swap_json_array(game_value_parameter leftArray, game_value_parameter 
 
 	//swap here
 	leftArrayPointer->jsonArray.swap(rightArrayPointer->jsonArray);
+
+	return {};
 }
 
 /*
@@ -1012,20 +1015,22 @@ game_value parse_json(game_value_parameter jsonArray, game_value_parameter strin
 	auto jsonArrayPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
 
 	// return if we can't accept the data
-	if (!nlohmann::json::accept(string))
+	if (!nlohmann::json::accept(std::string{ string }))
 	{
 		return {};
 	}
 
 	// parse
 	try {
-		jsonArrayPointer->jsonArray = nlohmann::json::parse(string);
+		jsonArrayPointer->jsonArray = nlohmann::json::parse(std::string{ string });
 	}
 	catch (nlohmann::json::parse_error& error)
 	{
 		//@TODO gs notify user of bad parse of data
+		//gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign, r_string{ error.what() });
 		return {};
 	}
+	return {};
 }
 
 
@@ -1036,8 +1041,9 @@ game_value parse_json(game_value_parameter jsonArray, game_value_parameter strin
  * @param type - the type of file
  * @author Killerswin2
  * @return game_value
+ * @TODO if the file is large we can't have this run in a unscheduled enviromnent
 */
-game_value parse_json_file_internaly( const game_value& filepath, const char& type)
+game_value parse_json_file_internal(game_state& gs, const game_value& filepath, const char& type)
 {
 	if (filepath.is_nil())
 	{
@@ -1081,6 +1087,7 @@ game_value parse_json_file_internaly( const game_value& filepath, const char& ty
 			catch (nlohmann::json::exception& error)
 			{
 				// @TODO gs the error and tell the user what happened?
+				//gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign, r_string{ error.what() });
 				return {};
 			}
 		}
@@ -1088,6 +1095,7 @@ game_value parse_json_file_internaly( const game_value& filepath, const char& ty
 	else
 	{
 		auto data = intercept::sqf::load_file(filepath);
+		
 		try {
 			switch (type)
 			{
@@ -1102,6 +1110,8 @@ game_value parse_json_file_internaly( const game_value& filepath, const char& ty
 		catch (nlohmann::json::exception& error)
 		{
 			// @TODO gs the error and tell the user what happened?
+			//gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign, r_string{ error.what() });
+			intercept::sqf::diag_log(error.what());
 			return {};
 		}
 	}
@@ -1116,7 +1126,7 @@ game_value parse_json_file_internaly( const game_value& filepath, const char& ty
  * @author Killerswin2
  * @return game_value
 */
-game_value parse_json_file(game_value_parameter filepath)
+game_value parse_json_file(game_state& gs, game_value_parameter filepath)
 {
 	if (filepath.is_nil())
 	{
@@ -1126,7 +1136,7 @@ game_value parse_json_file(game_value_parameter filepath)
 	// type 0 is plain text file
 	constexpr const char type = 0;
 
-	return parse_json_file_internaly(filepath, type);
+	return parse_json_file_internal(gs, filepath, type);
 }
 
 /*
@@ -1137,7 +1147,7 @@ game_value parse_json_file(game_value_parameter filepath)
  * @return game_value
  * <a href="https://json.nlohmann.me/features/binary_formats/bjdata/"> BJData </a>
 */ 
-game_value parse_json_file_bjdata(game_value_parameter filepath)
+game_value parse_json_file_bjdata(game_state& gs, game_value_parameter filepath)
 {
 	if (filepath.is_nil())
 	{
@@ -1147,7 +1157,7 @@ game_value parse_json_file_bjdata(game_value_parameter filepath)
 	// type 0 is plain text file
 	constexpr const char type = 1;
 
-	return parse_json_file_internaly(filepath, type);
+	return parse_json_file_internal(gs, filepath, type);
 }
 
 /*
@@ -1158,7 +1168,7 @@ game_value parse_json_file_bjdata(game_value_parameter filepath)
  * @return game_value
  * <a href="https://json.nlohmann.me/features/binary_formats/bson/"> BSON </a>
 */
-game_value parse_json_file_bson(game_value_parameter filepath)
+game_value parse_json_file_bson(game_state& gs, game_value_parameter filepath)
 {
 	if (filepath.is_nil())
 	{
@@ -1167,8 +1177,9 @@ game_value parse_json_file_bson(game_value_parameter filepath)
 	//@TODO change this to an enum maybe?
 	// type 0 is plain text file
 	constexpr const char type = 2;
-
-	return parse_json_file_internaly(filepath, type);
+	
+	// currently turned off because of character encodings and no binary reads in sqf.
+	return {};
 }
 
 /*
@@ -1179,7 +1190,7 @@ game_value parse_json_file_bson(game_value_parameter filepath)
  * @return game_value
  * <a href="https://json.nlohmann.me/features/binary_formats/cbor/"> CBOR </a>
 */
-game_value parse_json_file_cbor(game_value_parameter filepath)
+game_value parse_json_file_cbor(game_state& gs, game_value_parameter filepath)
 {
 	if (filepath.is_nil())
 	{
@@ -1189,7 +1200,7 @@ game_value parse_json_file_cbor(game_value_parameter filepath)
 	// type 0 is plain text file
 	constexpr const char type = 3;
 
-	return parse_json_file_internaly(filepath, type);
+	return parse_json_file_internal(gs, filepath, type);
 }
 
 /*
@@ -1200,7 +1211,7 @@ game_value parse_json_file_cbor(game_value_parameter filepath)
  * @return game_value
  * <a href="https://json.nlohmann.me/features/binary_formats/messagepack/"> MessagePack </a>
 */
-game_value parse_json_file_msgpack(game_value_parameter filepath)
+game_value parse_json_file_msgpack(game_state& gs, game_value_parameter filepath)
 {
 	if (filepath.is_nil())
 	{
@@ -1210,7 +1221,7 @@ game_value parse_json_file_msgpack(game_value_parameter filepath)
 	// type 0 is plain text file
 	constexpr const char type = 4;
 
-	return parse_json_file_internaly(filepath, type);
+	return parse_json_file_internal(gs, filepath, type);
 }
 
 /*
@@ -1221,7 +1232,7 @@ game_value parse_json_file_msgpack(game_value_parameter filepath)
  * @return game_value
  * <a href="https://json.nlohmann.me/features/binary_formats/ubjson/"> UBJSON </a>
 */
-game_value parse_json_file_ubjson(game_value_parameter filepath)
+game_value parse_json_file_ubjson(game_state& gs, game_value_parameter filepath)
 {
 	if (filepath.is_nil())
 	{
@@ -1231,7 +1242,7 @@ game_value parse_json_file_ubjson(game_value_parameter filepath)
 	// type 0 is plain text file
 	constexpr const char type = 5;
 
-	return parse_json_file_internaly(filepath, type);
+	return parse_json_file_internal(gs, filepath, type);
 }
 
 void json_game_data::jsonArray::pre_start()
@@ -1255,11 +1266,11 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("emplaceBack", "Creates a JSON value from supplied args", userFunctionWrapper<emplace_back_json_array>, game_data_type::NOTHING, codeType.first, game_data_type::ARRAY);
 	commands.addCommand("swap", "swaps JSON values", userFunctionWrapper<swap_json_array>, game_data_type::NOTHING, codeType.first, codeType.first);
 	commands.addCommand("parse", "parses strings into json data", userFunctionWrapper<parse_json>, game_data_type::NOTHING, codeType.first, game_data_type::STRING);
-	commands.addCommand("parseFile", "parses json files into json data", userFunctionWrapper<parse_json_file>, codeType.first, game_data_type::STRING);
-	commands.addCommand("parseFileBJData", "parses json BJData files into json data", userFunctionWrapper<parse_json_file_bjdata>, codeType.first, game_data_type::STRING);
-	commands.addCommand("parseFileBSON", "parses BSON json files into json data", userFunctionWrapper<parse_json_file_bson>, codeType.first, game_data_type::STRING);
-	commands.addCommand("parseFileCBOR", "parses CBOR json files into json data", userFunctionWrapper<parse_json_file_cbor>, codeType.first, game_data_type::STRING);
-	commands.addCommand("parseFileMessagePack", "parses MesssagePack json files into json data", userFunctionWrapper<parse_json_file_msgpack>, codeType.first, game_data_type::STRING);
-	commands.addCommand("parseFileUBJSON", "parses UBJSON json files into json data", userFunctionWrapper<parse_json_file_ubjson>, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFile", "parses json files into json data", parse_json_file, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileBJData", "parses json BJData files into json data", parse_json_file_bjdata, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileBSON", "parses BSON json files into json data", parse_json_file_bson, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileCBOR", "parses CBOR json files into json data", parse_json_file_cbor, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileMessagePack", "parses MesssagePack json files into json data", parse_json_file_msgpack, codeType.first, game_data_type::STRING);
+	commands.addCommand("parseFileUBJSON", "parses UBJSON json files into json data", parse_json_file_ubjson, codeType.first, game_data_type::STRING);
 
 }
