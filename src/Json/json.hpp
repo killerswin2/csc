@@ -63,5 +63,8 @@ public:
 	nlohmann::json jsonArray;
 };
 
+// other functions
+
+bool canJson(const game_value& element);
 
 #endif // !JSON_H

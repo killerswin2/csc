@@ -48,6 +48,64 @@ game_value create_json_object()
 	return game_value(new game_data_json());
 }
 
+/*
+ * @brief internal function for json object creation
+ * @detail everything besides rvArrays
+ * @param key - key for json object
+ * @param element - game_value element that was passed in.
+ * @param jsonObject - json object to work on
+ * @author Killerswin2
+ * @return game_value
+*/
+void json_object_creation_internal(const char * key, const game_value& element, nlohmann::json& jsonObject)
+{
+	game_data* GameDataPointer = element.data.get();
+	if (!canJson(element))
+	{
+		//@TODO we need to tell the user that they passed in an wrong type for json.
+	}
+
+	//json data type
+	if (GameDataPointer->type() == game_data_json_type)
+	{
+		auto jsonObjectPointer = static_cast<game_data_json*>(GameDataPointer);
+		jsonObject[key] = (jsonObjectPointer->jsonObject);
+		return;
+	}
+	// json array
+	if (GameDataPointer->type() == game_data_json_array_type)
+	{
+		auto jsonObjectPointer = static_cast<game_data_json_array*>(GameDataPointer);
+		jsonObject[key] = jsonObjectPointer->jsonArray;
+		return;
+	}
+
+	// string
+	if (element.type() == game_data_string::type_def)
+	{
+		auto gameDataStringPointer = static_cast<game_data_string*>(GameDataPointer);
+		jsonObject[key] = (gameDataStringPointer->raw_string);
+		return;
+	}
+
+	// number / scalar
+	if (element.type() == game_data_number::type_def)
+	{
+		auto gameDataNumberPointer = static_cast<game_data_number*>(GameDataPointer);
+		jsonObject[key] = (gameDataNumberPointer->number);
+		return;
+	}
+
+	// bool
+	if (element.type() == game_data_bool::type_def)
+	{
+		auto gameDataBoolPointer = static_cast<game_data_bool*>(GameDataPointer);
+		jsonObject[key] = (gameDataBoolPointer->val);
+		return;
+	}
+}
+
+
 void json_game_data::json::pre_start()
 {
 	auto codeType = intercept::client::host::register_sqf_type("JSONHASHMAP"sv, "jsonHashMap"sv, "hashmap for json stuff", "jsonHashMap"sv, create_game_data_json);
@@ -172,9 +230,10 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 	game_data* GameDataPointer = element.data.get();
 	if (!canJson(element))
 	{
-		jsonArray.push_back(intercept::sqf::str(element));
-		
+		//@TODO gs here, that the element was not an accepted type for json
+		return;
 	}
+		
 
 	//json data type
 	if (GameDataPointer->type() == game_data_json_type)
@@ -212,12 +271,6 @@ void push_back_internal(const game_value& element, nlohmann::json& jsonArray)
 	{
 		auto gameDataBoolPointer = static_cast<game_data_bool*>(GameDataPointer);
 		jsonArray.push_back(gameDataBoolPointer->val);
-		return;
-	}
-
-	if (!canJson(element))
-	{
-		jsonArray.push_back(intercept::sqf::str(element));
 		return;
 	}
 }
@@ -296,7 +349,6 @@ game_value push_back_json_array(game_value_parameter jsonArray, game_value_param
 		process_array(rightArg, jsonArray);
 		jsonPointer->jsonArray.push_back(jsonArray);
 	}
-
 
 	return {};
 }
@@ -772,8 +824,7 @@ game_value erase_json_array(game_value_parameter jsonArray, game_value_parameter
 	int startSlice = rvArray[0];
 	int endSlice = rvArray[1];
 
-	//+1 for iter needs of end+1
-	auto iter = gameDataJsonPointer->jsonArray.erase(gameDataJsonPointer->jsonArray.begin() + startSlice, gameDataJsonPointer->jsonArray.begin() + endSlice + 1);
+	auto iter = gameDataJsonPointer->jsonArray.erase(gameDataJsonPointer->jsonArray.begin() + startSlice, gameDataJsonPointer->jsonArray.begin() + endSlice);
 
 	return static_cast<int>(iter - gameDataJsonPointer->jsonArray.begin());
 }
@@ -800,6 +851,66 @@ game_value erase_json_array_index(game_value_parameter jsonArray, game_value_par
 	return {};
 }
 
+
+/*
+ * @brief internal function for emplacing back data to the jsonArray
+ * @detail
+ * @param element - game_value element that was passed in.
+ * @param jsonArray - json array to work on
+ * @author Killerswin2
+ * @return game_value
+*/
+void emplace_back_internal(const game_value& element, nlohmann::json& jsonArray)
+{
+	game_data* GameDataPointer = element.data.get();
+	if (!canJson(element))
+	{
+		//@TODO we need to tell the user that they passed in an wrong type for json.
+		return;
+	}
+
+	//json data type
+	if (GameDataPointer->type() == game_data_json_type)
+	{
+		auto jsonObjectPointer = static_cast<game_data_json*>(GameDataPointer);
+		jsonArray.emplace_back(jsonObjectPointer->jsonObject);
+		return;
+	}
+	// json array
+	if (GameDataPointer->type() == game_data_json_array_type)
+	{
+		auto jsonObjectPointer = static_cast<game_data_json_array*>(GameDataPointer);
+		jsonArray.emplace_back(jsonObjectPointer->jsonArray);
+		return;
+	}
+
+	// string
+	if (element.type() == game_data_string::type_def)
+	{
+		auto gameDataStringPointer = static_cast<game_data_string*>(GameDataPointer);
+		jsonArray.emplace_back(gameDataStringPointer->raw_string);
+		return;
+	}
+
+	// number / scalar
+	if (element.type() == game_data_number::type_def)
+	{
+		auto gameDataNumberPointer = static_cast<game_data_number*>(GameDataPointer);
+		jsonArray.emplace_back(gameDataNumberPointer->number);
+		return;
+	}
+
+	// bool
+	if (element.type() == game_data_bool::type_def)
+	{
+		auto gameDataBoolPointer = static_cast<game_data_bool*>(GameDataPointer);
+		jsonArray.emplace_back(gameDataBoolPointer->val);
+		return;
+	}
+}
+
+
+
 /*
  * @brief emplaces to the back of the json array, a json value from the args
  * @detail
@@ -810,6 +921,51 @@ game_value erase_json_array_index(game_value_parameter jsonArray, game_value_par
 */
 game_value emplace_back_json_array(game_value_parameter jsonArray, game_value_parameter rightArgs)
 {
+	if (jsonArray.is_nil())
+	{
+		return {};
+	}
+
+	// json game_data type
+	game_data_json_array* jsonPointer = static_cast<game_data_json_array*>(jsonArray.data.get());
+
+	if (rightArgs.size() == 2)
+	{
+		// okay the size is two, therefore [key, value] -> create a json object here then.
+
+		// json key
+		const char* key;
+
+
+		if (rightArgs[0].type() != game_data_string::type_def)
+		{
+			// @TODO gs tell the user that the first element in the array must be a string
+			return {};
+		}
+		else
+		{
+			key = static_cast<game_data_string*>(rightArgs[0].data.get())->raw_string.c_str();
+		}
+
+		if (rightArgs[1].type() == game_data_array::type_def)
+		{
+			nlohmann::json nestedArray = nlohmann::json::array();
+			process_array(rightArgs[1], nestedArray);
+			nlohmann::json jsonObject;
+			jsonObject[key] = nestedArray;
+			jsonPointer->jsonArray.emplace_back(jsonObject);
+		}
+
+		// check that there isn't an array in index 1, else you will get null returns
+		if (canJson(rightArgs[1]) && rightArgs[1].type() != game_data_array::type_def)
+		{
+			nlohmann::json jsonObject;
+			json_object_creation_internal(key, rightArgs[1], jsonObject);
+			jsonPointer->jsonArray.emplace_back(jsonObject);
+		}
+
+	}
+
 	return {};
 }
 
@@ -832,6 +988,6 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("insert", "inserts element in to the json array", userFunctionWrapper<insert_json_array>, game_data_type::SCALAR, codeType.first, game_data_type::ARRAY);
 	commands.addCommand("erase", "removes element from JSON element range", userFunctionWrapper<erase_json_array>, game_data_type::SCALAR, codeType.first, game_data_type::ARRAY);
 	commands.addCommand("erase", "removes an element from a JSON array by index", userFunctionWrapper<erase_json_array_index>, game_data_type::NOTHING, codeType.first, game_data_type::SCALAR);
-	commands.addCommand("emplaceBack", "Creates a JSON value from supplied args", userFunctionWrapper<emplace_back_json_array>, game_data_type::NOTHING, codeType.first, game_data_type::ANY);
+	commands.addCommand("emplaceBack", "Creates a JSON value from supplied args", userFunctionWrapper<emplace_back_json_array>, game_data_type::NOTHING, codeType.first, game_data_type::ARRAY);
 
 }
