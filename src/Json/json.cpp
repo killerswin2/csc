@@ -532,6 +532,7 @@ game_value clear_json_array(game_value_parameter jsonArray)
  * @param jsonArray - json array to work on
  * @param list - intercept auto_array
  * @author Killerswin2
+ * @TODO replace with iterative solution instead of recursive
 */
 void json_array_convertor(nlohmann::json& element, intercept::types::auto_array<game_value>& list)
 {
@@ -1245,6 +1246,101 @@ game_value parse_json_file_ubjson(game_state& gs, game_value_parameter filepath)
 	return parse_json_file_internal(gs, filepath, type);
 }
 
+/*
+ * @brief appends two json arrays together
+ * @detail 
+ * @param leftJsonArray - left json array
+ * @param rightJsonArray - right json array
+ * @author Killerswin2
+ * @return game_value
+*/
+game_value append_json_arrays(game_value_parameter leftJsonArray, game_value_parameter rightJsonArray)
+{
+	if (leftJsonArray.is_nil() || rightJsonArray.is_nil())
+	{
+		return {};
+	}
+	auto jsonLeftPointer = static_cast<game_data_json_array*>(leftJsonArray.data.get());
+	auto jsonRightPointer = static_cast<game_data_json_array*>(rightJsonArray.data.get());
+
+	for (size_t i = 0; i < jsonRightPointer->jsonArray.size(); i++)
+	{
+		jsonLeftPointer->jsonArray.push_back(jsonRightPointer->jsonArray[i]);
+	}
+	return {};
+}
+
+
+/*
+ * @brief appends a rv array and a json array together
+ * @detail
+ * @param leftJsonArray - left json array
+ * @param rightArray - right rv array
+ * @author Killerswin2
+ * @return game_data_nothing
+*/
+game_value append_json_array_rv_array(game_value_parameter leftJsonArray, game_value_parameter rightArray)
+{
+	if (leftJsonArray.is_nil() || rightArray.is_nil())
+	{
+		return {};
+	}
+
+	auto jsonLeftPointer = static_cast<game_data_json_array*>(leftJsonArray.data.get());
+	nlohmann::json jsonArrayFromRV;
+	process_array(rightArray, jsonArrayFromRV);
+
+	// do pushback thing.
+	for (size_t i = 0; i < jsonLeftPointer->jsonArray.size(); i++)
+	{
+		jsonLeftPointer->jsonArray.push_back(jsonArrayFromRV[i]);
+	}
+	return {};
+}
+
+
+/*
+ * @brief appends a rv array and a json array together
+ * @detail okay due to being very tired when writting this, this function converts the json array to an rv
+ * auto array then we push back each element.
+ * @param leftJsonArray - left json array
+ * @param rightArray - right rv array
+ * @author Killerswin2
+ * @return game_value(auto_array)
+ * @TODO really check that this even works? or Check if there is a better way to do this
+*/
+game_value append_array_json_array(game_value_parameter leftArray, game_value_parameter rightJsonArray)
+{
+	if (leftArray.is_nil() || rightJsonArray.is_nil())
+	{
+		return {};
+	}
+	auto jsonRightPointer = static_cast<game_data_json_array*>(rightJsonArray.data.get());
+
+	auto_array<game_value> list;
+	auto& array = leftArray.to_array();
+
+	nlohmann::json::iterator iter = jsonRightPointer->jsonArray.begin();
+	nlohmann::json::const_iterator endIt = jsonRightPointer->jsonArray.end();
+
+	//@TODO PARALLELIZE THIS!!!!!!!!!!!!!
+
+	// go through the array, and convert the elements
+	while (iter != endIt)
+	{
+		json_array_convertor(*iter, list);
+		iter++;
+	}
+
+	// do this nonsense until append is created
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		array.push_back(list[i]);
+	}
+
+	return {};
+}
+
 void json_game_data::jsonArray::pre_start()
 {
 	auto codeType = intercept::client::host::register_sqf_type("JSONARRAY"sv, "jsonArray"sv, "json array stuff", "jsonArray"sv, create_game_data_json_array);
@@ -1272,5 +1368,26 @@ void json_game_data::jsonArray::pre_start()
 	commands.addCommand("parseFileCBOR", "parses CBOR json files into json data", parse_json_file_cbor, codeType.first, game_data_type::STRING);
 	commands.addCommand("parseFileMessagePack", "parses MesssagePack json files into json data", parse_json_file_msgpack, codeType.first, game_data_type::STRING);
 	commands.addCommand("parseFileUBJSON", "parses UBJSON json files into json data", parse_json_file_ubjson, codeType.first, game_data_type::STRING);
+	commands.addCommand("append", "appends the json array to another json array", userFunctionWrapper<append_json_arrays>, game_data_type::NOTHING, codeType.first, codeType.first);
+	commands.addCommand("append", "appends the json array to another rv array ", userFunctionWrapper<append_json_array_rv_array>, game_data_type::NOTHING, codeType.first, game_data_type::ARRAY);
+	commands.addCommand("append", "appends the array to another json array ", userFunctionWrapper<append_array_json_array>, game_data_type::NOTHING, game_data_type::ARRAY, codeType.first);
+	commands.addCommand("+", "appends the json array to another json array", userFunctionWrapper<append_json_arrays>, codeType.first, codeType.first, codeType.first);
+	commands.addCommand("+", "appends the json array to another rv array ", userFunctionWrapper<append_json_array_rv_array>, codeType.first, codeType.first, game_data_type::ARRAY);
+	commands.addCommand("+", "appends the array to another json array ", userFunctionWrapper<append_array_json_array>, game_data_type::ARRAY, game_data_type::ARRAY, codeType.first);
+	//commands.addCommand("apply");
+	//commands.addCommand("deleteAt");
+	//commands.addCommand("deleteRange");
+	//commands.addCommand("find");
+	//commands.addCommand("findAny");
+	//commands.addCommand("findIf");
+	//commands.addCommand("flatten");
+	//commands.addCommand("forEach");
+	//commands.addCommand("in");
+	//commands.addCommand("params");
+	//commands.addCommand("pushBackUnique");
+	//commands.addCommand("select");
+	//commands.addCommand("selectRandom");
+	//commands.addCommand("toString");
+
 
 }
