@@ -1029,6 +1029,7 @@ game_value parse_json(game_value_parameter jsonArray, game_value_parameter strin
 	{
 		//@TODO gs notify user of bad parse of data
 		//gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign, r_string{ error.what() });
+		intercept::sqf::diag_log(error.what());
 		return {};
 	}
 	return {};
@@ -1089,6 +1090,7 @@ game_value parse_json_file_internal(game_state& gs, const game_value& filepath, 
 			{
 				// @TODO gs the error and tell the user what happened?
 				//gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign, r_string{ error.what() });
+				intercept::sqf::diag_log(error.what());
 				return {};
 			}
 		}
