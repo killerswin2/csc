@@ -26,3 +26,5 @@ void intercept::pre_start() {
 void intercept::pre_init() {
     
 }
+
+void intercept::

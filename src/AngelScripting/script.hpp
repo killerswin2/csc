@@ -34,14 +34,24 @@ int  runApplication();
 void configureEngine(asIScriptEngine*& engine);
 void messageCallback(const asSMessageInfo *msg, void* param);
 int  compileScript(asIScriptEngine*& engine);
-void printString(std::string& str);
-void printString_Generic(asIScriptGeneric* gen);
+void system_chat(std::string& str);
+void system_chat_generic(asIScriptGeneric* gen);
 void lineCallback(asIScriptContext*& ctx, DWORD* timeOut);
 
 namespace AngelScript
 {
 	void pre_start();
 
+	class ScriptEngine
+	{
+	private:
+		asIScriptEngine* engine;
+	public:
+		ScriptEngine();
+		~ScriptEngine();
+		void config_engine();
+		void run_engine();
+	};
 };
 
 
