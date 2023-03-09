@@ -5,121 +5,46 @@
 
 int runApplication()
 {
-	int retCode;
-#ifdef DEBUG_CONSOLE
-	AllocConsole();
-	FILE* fp = new FILE();
-	freopen_s(&fp, "CONOUT$", "w", stdout);
-#endif // DEBUG_CONSOLE
-	//create engine
-	asIScriptEngine* engine = asCreateScriptEngine();
-	if (!engine)
-	{
-		// engine failed to be created.
-#ifdef DEBUG_CONSOLE
-		std::cout << "Failed to create script engine\n";
-#endif // DEBUG_CONSOLE
-		return -1;
-	}
+	AngelScript::Engine engine;
+	auto sEngine = engine.get_script_engine();
+	sEngine->set_timeout();
+	return sEngine->execute_context();
 
-	retCode = engine->SetMessageCallback(asFUNCTION(messageCallback), 0, asCALL_CDECL);
-	assert(retCode >= 0);
+}
 
-	configureEngine(engine);
+AngelScript::ScriptEngine::ScriptEngine()
+{
+	create_engine();
+	config_engine();
+	// use default here
+	set_message_callback(asFUNCTION(messageCallback), 0, asCALL_CDECL);
 
 	// compile scripts
-	retCode = compileScript(engine);
-	if(retCode < 0) 
+	if (compile_script() < 0)
 	{
 		engine->Release();
-		return -1;
 	}
+	create_context();
+	// use default here
+	set_line_callback(asFUNCTION(lineCallback), &timeOut, asCALL_CDECL);
+	//asIScriptFunction *func= find_function();
+	prepare_context(find_function());
+	set_timeout();
 
-	// engine context, executes scripts
-	asIScriptContext* ctx = engine->CreateContext();
-	if (ctx == 0)
-	{
-		std::cout << "Failed to create the context\n";
-		engine->Release();
-		return -1;
-	}
+	std::cout << "ctx address: " << this->ctx << "\n";
+	std::cout << "engine address: " << this->engine << "\n";
+}
 
-	// prevent infinite loops
-	DWORD timeOut;
-	retCode = ctx->SetLineCallback(asFUNCTION(lineCallback), &timeOut, asCALL_CDECL);
-	if (retCode < 0)
-	{
-		std::cout << "Failed to set line callback func\n";
-		ctx->Release();
-		engine->Release();
-		return -1;
-	}
-
-	// find function, get pointer to it
-	asIScriptFunction* func = engine->GetModule(0)->GetFunctionByDecl("void main()");
-	if (!func)
-	{
-		std::cout << "The function was not found.\n";
-		ctx->Release();
-		engine->Release();
-		return -1;
-	}
-
-	// prepare the script context with the function that we want to exec
-	retCode = ctx->Prepare(func);
-	if (retCode < 0)
-	{
-		std::cout << "failed to prepare context\n";
-		ctx->Release();
-		engine->Release();
-		return -1;
-	}
-
-	//set timeout for script execution
-	timeOut = timeGetTime() + 1000;
-
-	// now the fun part. Execute the function
-	retCode = ctx->Execute();
-
-	// error checking
-	if (retCode != asEXECUTION_FINISHED)
-	{
-		if (retCode == asEXECUTION_ABORTED)
-		{
-			std::cout << "script was aborted\n";
-		}
-		else if (retCode == asEXECUTION_EXCEPTION)
-		{
-			std::cout << "The script ended with an exception\n";
-		
-			// write out info to find the exception
-			asIScriptFunction* funcEx = ctx->GetExceptionFunction();
-			std::cout << "func: " << funcEx->GetDeclaration() << "\n";
-			std::cout << "modl: " << funcEx->GetModuleName() << "\n";
-			std::cout << "sect: " << funcEx->GetScriptSectionName() << "\n";
-			std::cout << "line: " << ctx->GetExceptionLineNumber() << "\n";
-			std::cout << "desc: " << ctx->GetExceptionString() << "\n";
-		}
-		else
-		{
-			std::cout << "Script ended for some unknown reason(" << retCode << ").\n";
-		}
-	}
-	else
-	{
-		std::cout << "Script finished\n";
-	}
-	
+AngelScript::ScriptEngine::~ScriptEngine()
+{
 	// release context
 	ctx->Release();
 	// shut down engine
 	engine->ShutDownAndRelease();
-
-	return 0;
 }
 
 //@TODO this is needs to be done at prestart.
-void configureEngine(asIScriptEngine*& engine)
+void AngelScript::ScriptEngine::config_engine()
 {
 	int retCode;
 
@@ -128,64 +53,42 @@ void configureEngine(asIScriptEngine*& engine)
 	{
 		retCode = engine->SetDefaultNamespace("sqf"); assert(retCode >= 0);
 		retCode = engine->RegisterGlobalFunction("void system_chat(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		
-		retCode = engine->SetDefaultNamespace("sqf::diag"); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void active_mission_fsms(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void active_scripts(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void active_sqf_scripts(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void active_sqs_scripts(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void all_mission_eventhandlers(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void capture_frame(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void capture_frame_to_file(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void captures_lowframe(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void code_performance(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void delta_time(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void draw_mode(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void dump_call_trace_to_log(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void dump_script_assembly(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void dump_terrain_synth(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void dynamic_simulation_end(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void dynamic_simulation_start(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void enable(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void enabled(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void export_config(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void export_terrain_svg(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void fps(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void fpsmin(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void frameno(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void get_terrain_grid(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void get_terrain_height(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void get_terrain_segment_offset(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void light_new_load(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void list(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void log(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void log_slow_frame(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void merge_config_file(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void record_turret_limits(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void reset_shapes(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void scope(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void set_light_new(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void set_terrain_height(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void stack_trace(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void tick_time(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void toggle(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void echo(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void enable_diag_legend(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void export_jip_messages(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void get_terrain_info(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void is_file_patching_enabled(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void log_entities(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void log_network(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void log_network_terminate(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-		retCode = engine->RegisterGlobalFunction("void set_custom_mission_data(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
-
-
 	}
 	else
 	{
 		retCode = engine->SetDefaultNamespace("sqf"); assert(retCode >= 0);
 		retCode = engine->RegisterGlobalFunction("void system_chat(string &in)", asFUNCTION(system_chat_generic), asCALL_GENERIC); assert(retCode >= 0);
 	}
+	configure_wrapper_functions_diag(engine);
+
+}
+
+int AngelScript::ScriptEngine::create_engine()
+{
+#ifdef DEBUG_CONSOLE
+	AllocConsole();
+	FILE* fp = new FILE();
+	freopen_s(&fp, "CONOUT$", "w", stdout);
+#endif // DEBUG_CONSOLE
+	//create engine
+	this->engine = asCreateScriptEngine();
+	if (!engine)
+	{
+		// engine failed to be created.
+#ifdef DEBUG_CONSOLE
+		std::cout << "Failed to create script engine\n";
+#endif // DEBUG_CONSOLE
+		return -1;
+	}
+	return 0;
+}
+
+int AngelScript::ScriptEngine::set_message_callback(const asSFuncPtr& callback, void* obj, asDWORD callConv)
+{
+	int retCode;
+	retCode = engine->SetMessageCallback(callback, obj, callConv);
+	assert(retCode >= 0);
+	return retCode;
 }
 
 void messageCallback(const asSMessageInfo* msg, void* param)
@@ -205,13 +108,13 @@ void messageCallback(const asSMessageInfo* msg, void* param)
 }
 
 //compiles scripts
-int compileScript(asIScriptEngine*& engine)
+int AngelScript::ScriptEngine::compile_script()
 {
 	int retCode;
 
 	CScriptBuilder builder;
 
-	retCode = builder.StartNewModule(engine, 0);
+	retCode = builder.StartNewModule(this->engine, 0);
 	if (retCode < 0)
 	{
 		std::cout << "Failed to start new module\n";
@@ -235,6 +138,109 @@ int compileScript(asIScriptEngine*& engine)
 	return 0;
 }
 
+
+int AngelScript::ScriptEngine::create_context()
+{
+	// engine context, executes scripts
+	ctx = engine->CreateContext();
+	if (ctx == nullptr)
+	{
+		std::cout << "Failed to create the context\n";
+		engine->Release();
+		return -1;
+	}
+	return 0;
+}
+
+int AngelScript::ScriptEngine::set_line_callback(asSFuncPtr callback, void* obj, int callConv)
+{
+	int retCode;
+	// prevent infinite loops
+	retCode = ctx->SetLineCallback(callback, obj, callConv);
+	if (retCode < 0)
+	{
+		std::cout << "Failed to set line callback func\n";
+		ctx->Release();
+		engine->Release();
+		return -1;
+	}
+	return 0;
+}
+
+// find function, get pointer to it
+asIScriptFunction* AngelScript::ScriptEngine::find_function()
+{
+	asIScriptFunction* func = engine->GetModule(0)->GetFunctionByDecl("void main()");
+	if (!func)
+	{
+		std::cout << "The function was not found.\n";
+		ctx->Release();
+		engine->Release();
+		return nullptr;
+	}
+	return std::move(func);
+}
+
+int AngelScript::ScriptEngine::prepare_context(asIScriptFunction* func)
+{
+	int retCode;
+	// prepare the script context with the function that we want to exec
+	retCode = ctx->Prepare(func);
+	if (retCode < 0)
+	{
+		std::cout << "failed to prepare context\n";
+		ctx->Release();
+		engine->Release();
+		return -1;
+	}
+	return 0;
+}
+
+int AngelScript::ScriptEngine::set_timeout()
+{
+	timeOut = timeGetTime() + 1000;
+	return 0;
+}
+
+int AngelScript::ScriptEngine::execute_context()
+{
+	int retCode;
+	// now the fun part. Execute the function
+	retCode = ctx->Execute();
+
+	// error checking
+	if (retCode != asEXECUTION_FINISHED)
+	{
+		if (retCode == asEXECUTION_ABORTED)
+		{
+			std::cout << "script was aborted\n";
+		}
+		else if (retCode == asEXECUTION_EXCEPTION)
+		{
+			std::cout << "The script ended with an exception\n";
+
+			// write out info to find the exception
+			asIScriptFunction* funcEx = ctx->GetExceptionFunction();
+			std::cout << "func: " << funcEx->GetDeclaration() << "\n";
+			std::cout << "modl: " << funcEx->GetModuleName() << "\n";
+			std::cout << "sect: " << funcEx->GetScriptSectionName() << "\n";
+			std::cout << "line: " << ctx->GetExceptionLineNumber() << "\n";
+			std::cout << "desc: " << ctx->GetExceptionString() << "\n";
+		}
+		else
+		{
+			std::cout << "Script ended for some unknown reason(" << retCode << ").\n";
+		}
+	}
+	else
+	{
+		std::cout << "Script finished\n";
+	}
+	return 0;
+}
+
+
+AngelScript::ScriptEngine* AngelScript::Engine::scriptEngine = new AngelScript::ScriptEngine;
 
 void system_chat(std::string& str)
 {

@@ -12,6 +12,8 @@
 #include <scriptbuilder/scriptbuilder.h>
 #include <scriptstdstring/scriptstdstring.h>
 
+#include "diag_wrapper/diag.hpp"
+
 
 #ifdef __linux__
 #include <sys/time.h>
@@ -31,9 +33,7 @@ typedef unsigned int DWORD;
 
 #endif
 int  runApplication();
-void configureEngine(asIScriptEngine*& engine);
 void messageCallback(const asSMessageInfo *msg, void* param);
-int  compileScript(asIScriptEngine*& engine);
 void system_chat(std::string& str);
 void system_chat_generic(asIScriptGeneric* gen);
 void lineCallback(asIScriptContext*& ctx, DWORD* timeOut);
@@ -46,12 +46,34 @@ namespace AngelScript
 	{
 	private:
 		asIScriptEngine* engine;
+		asIScriptContext* ctx;
+		DWORD timeOut;
 	public:
 		ScriptEngine();
 		~ScriptEngine();
 		void config_engine();
 		void run_engine();
+		int create_engine();
+		int set_message_callback(const asSFuncPtr& callback, void* obj, asDWORD callConv);
+		int compile_script();
+		int create_context();
+		int set_line_callback(asSFuncPtr callback, void* obj, int callConv);
+		asIScriptFunction* find_function();
+		int prepare_context(asIScriptFunction* func);
+		int set_timeout();
+		int execute_context();
+	};
+
+	class Engine
+	{
+	private:
+		static AngelScript::ScriptEngine * scriptEngine;
+	public:
+		Engine() {};
+		AngelScript::ScriptEngine* get_script_engine() { return scriptEngine; }
 	};
 };
+
+
 
 
