@@ -59,7 +59,7 @@ void AngelScript::ScriptEngine::config_engine()
 		retCode = engine->SetDefaultNamespace("sqf"); assert(retCode >= 0);
 		retCode = engine->RegisterGlobalFunction("void system_chat(string &in)", asFUNCTION(system_chat_generic), asCALL_GENERIC); assert(retCode >= 0);
 	}
-	configure_wrapper_functions_diag(engine);
+	register_wrapper_functions_diag(engine);
 
 }
 

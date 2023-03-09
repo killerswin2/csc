@@ -1,6 +1,6 @@
 #include "diag.hpp"
 
-void configure_wrapper_functions_diag(asIScriptEngine*& engine)
+void register_wrapper_functions_diag_native(asIScriptEngine*& engine)
 {
 	int retCode;
 	retCode = engine->SetDefaultNamespace("sqf::diag"); assert(retCode >= 0);
@@ -52,4 +52,22 @@ void configure_wrapper_functions_diag(asIScriptEngine*& engine)
 	retCode = engine->RegisterGlobalFunction("void log_network(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("void log_network_terminate(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("void set_custom_mission_data(string &in)", asFUNCTION(system_chat), asCALL_CDECL); assert(retCode >= 0);
+}
+
+void register_wrapper_functions_diag_native(asIScriptEngine*& engine)
+{
+
+}
+
+
+void register_wrapper_functions_diag(asIScriptEngine*& engine)
+{
+	if (strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY"))
+	{
+		register_wrapper_functions_diag_generic(engine);
+	}
+	else
+	{
+		register_wrapper_functions_diag_native(engine);
+	}
 }
