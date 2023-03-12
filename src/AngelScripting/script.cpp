@@ -49,6 +49,7 @@ void AngelScript::ScriptEngine::config_engine()
 	int retCode;
 
 	RegisterStdString(engine);
+	RegisterScriptArray(engine, true);
 	if (!strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY"))
 	{
 		retCode = engine->SetDefaultNamespace("sqf"); assert(retCode >= 0);
