@@ -8,12 +8,16 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
+#include <new>
 #include <angelscript.h>
 #include <scriptbuilder/scriptbuilder.h>
 #include <scriptstdstring/scriptstdstring.h>
 #include <scriptarray/scriptarray.h>
 
+#include "game_types/vectors.hpp"
+
 #include "diag_wrapper/diag.hpp"
+
 
 
 #ifdef __linux__
@@ -56,7 +60,7 @@ namespace AngelScript
 		void run_engine();
 		int create_engine();
 		int set_message_callback(const asSFuncPtr& callback, void* obj, asDWORD callConv);
-		int compile_script();
+		int compile_script(const std::string& filepath);
 		int create_context();
 		int set_line_callback(asSFuncPtr callback, void* obj, int callConv);
 		asIScriptFunction* find_function();

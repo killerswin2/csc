@@ -2,11 +2,19 @@
 
 #include "script.hpp"
 
+int compile_script(std::string& file)
+{
+	AngelScript::Engine engine;
+	auto sEngine = engine.get_script_engine();
+	return sEngine->compile_script(file);
+}
 
 int runApplication()
 {
 	AngelScript::Engine engine;
 	auto sEngine = engine.get_script_engine();
+	//sEngine->compile_script(std::string("@csc/scripts/test.as"));
+	sEngine->prepare_context(sEngine->find_function());
 	sEngine->set_timeout();
 	return sEngine->execute_context();
 
@@ -20,7 +28,7 @@ AngelScript::ScriptEngine::ScriptEngine()
 	set_message_callback(asFUNCTION(messageCallback), 0, asCALL_CDECL);
 
 	// compile scripts
-	if (compile_script() < 0)
+	if (compile_script(std::string("@csc/scripts/test.as")) < 0)
 	{
 		engine->Release();
 	}
@@ -61,6 +69,7 @@ void AngelScript::ScriptEngine::config_engine()
 		retCode = engine->RegisterGlobalFunction("void system_chat(string &in)", asFUNCTION(system_chat_generic), asCALL_GENERIC); assert(retCode >= 0);
 	}
 	register_wrapper_functions_diag(engine);
+	register_vectors(engine);
 
 }
 
@@ -109,7 +118,7 @@ void messageCallback(const asSMessageInfo* msg, void* param)
 }
 
 //compiles scripts
-int AngelScript::ScriptEngine::compile_script()
+int AngelScript::ScriptEngine::compile_script(const std::string& filepath)
 {
 	int retCode;
 
@@ -123,7 +132,7 @@ int AngelScript::ScriptEngine::compile_script()
 	}
 
 	// file
-	retCode = builder.AddSectionFromFile("@csc/scripts/test.as");
+	retCode = builder.AddSectionFromFile(filepath.c_str());
 	if (retCode < 0)
 	{
 		return retCode;
@@ -246,7 +255,7 @@ AngelScript::ScriptEngine* AngelScript::Engine::scriptEngine = new AngelScript::
 void system_chat(std::string& str)
 {
 	std::cout << str << "\n";
-	intercept::sqf::system_chat(str);
+	//intercept::sqf::system_chat(str);
 }
 
 void system_chat_generic(asIScriptGeneric* gen)
@@ -260,7 +269,7 @@ void lineCallback(asIScriptContext *& ctx, DWORD *timeOut)
 {
 	if (*timeOut < timeGetTime())
 	{
-		ctx->Abort();
+		//ctx->Abort();
 	}
 }
 
@@ -271,8 +280,15 @@ game_value testAngelScript()
 	return retCode;
 }
 
+game_value compileAngelScript()
+{
+	game_value retCode = compile_script(std::string("@csc/scripts/test.as"));
+	return retCode;
+}
+
 void AngelScript::pre_start()
 {
 	Commands& commands = Commands::get();
 	commands.addCommand("testAngel", "test AngelScripting", userFunctionWrapper<testAngelScript>, game_data_type::SCALAR);
+	commands.addCommand("compileAngelScript", "compile AngelScript", userFunctionWrapper<compileAngelScript>, game_data_type::SCALAR);
 }

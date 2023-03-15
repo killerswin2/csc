@@ -1,6 +1,7 @@
 #include "diag.hpp"
 
 
+
 void active_mission_fsms()
 {
 	//returns an array of game_values
@@ -297,6 +298,49 @@ void register_wrapper_functions_diag_native(asIScriptEngine*& engine)
 	retCode = engine->RegisterGlobalFunction("bool is_file_patching_enabled()", asFUNCTION(is_file_patching_enabled), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("void log_entities()", asFUNCTION(log_entities), asCALL_CDECL); assert(retCode >= 0);
 
+	////register objects here!
+	//retCode = engine->RegisterObjectType("activeMissionFSMs", sizeof(activeMissionFSMs), asOBJ_VALUE | asGetTypeTraits<activeMissionFSMs>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeMissionFSMs", "string name", asOFFSET(activeMissionFSMs, _name)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeMissionFSMs", "string state", asOFFSET(activeMissionFSMs, _state)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeMissionFSMs", "float timeOut", asOFFSET(activeMissionFSMs, _timeOut)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("activeScripts", sizeof(activeScripts), asOBJ_VALUE | asGetTypeTraits<activeScripts>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeScripts", "float spawned", asOFFSET(activeScripts, _spawned)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeScripts", "float execVMed", asOFFSET(activeScripts, _execVMed)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeScripts", "float execed", asOFFSET(activeScripts, _execed)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeScripts", "float execFSMed", asOFFSET(activeScripts, _execFSMed)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("activeSQFScripts", sizeof(activeSQFScripts), asOBJ_VALUE | asGetTypeTraits<activeSQFScripts>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQFScripts", "string name", asOFFSET(activeSQFScripts, _name)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQFScripts", "string filepath", asOFFSET(activeSQFScripts, _filepath)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQFScripts", "bool isRunning", asOFFSET(activeSQFScripts, _isRunning)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQFScripts", "float currentLine", asOFFSET(activeSQFScripts, _currentLine)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("activeSQSScripts", sizeof(activeSQSScripts), asOBJ_VALUE | asGetTypeTraits<activeSQSScripts>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQSScripts", "string name", asOFFSET(activeSQSScripts, _name)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQSScripts", "string filepath", asOFFSET(activeSQSScripts, _filepath)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQSScripts", "bool isRunning", asOFFSET(activeSQSScripts, _isRunning)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("activeSQSScripts", "float currentLine", asOFFSET(activeSQSScripts, _currentLine)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("allMissionEvent", sizeof(allMissionEvent), asOBJ_VALUE | asGetTypeTraits<allMissionEvent>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("allMissionEvent", "string EHName", asOFFSET(allMissionEvent, _EHName)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("allMissionEvent", "float EHCount", asOFFSET(allMissionEvent, _EHCount)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("codePerformance", sizeof(codePerformance), asOBJ_VALUE | asGetTypeTraits<codePerformance>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("codePerformance", "float duration", asOFFSET(codePerformance, _duration)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("codePerformance", "float cycles", asOFFSET(codePerformance, _cycles)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("terrainMinMax", sizeof(terrainMinMax), asOBJ_VALUE | asGetTypeTraits<terrainMinMax>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("terrainMinMax", "float min", asOFFSET(terrainMinMax, _min)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("terrainMinMax", "float max", asOFFSET(terrainMinMax, _max)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("dumpTerrainSynth", sizeof(dumpTerrainSynth), asOBJ_VALUE | asGetTypeTraits<dumpTerrainSynth>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("dumpTerrainSynth", "float aLength", asOFFSET(dumpTerrainSynth, _aLength)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("dumpTerrainSynth", "array<terrainMinMax> &minMax", asOFFSET(dumpTerrainSynth, _minMax)); assert(retCode >= 0);
+
+	//retCode = engine->RegisterObjectType("terrainSegmentOffset", sizeof(terrainSegmentOffset), asOBJ_VALUE | asGetTypeTraits<terrainSegmentOffset>()); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("terrainSegmentOffset", "float x", asOFFSET(terrainSegmentOffset, _x)); assert(retCode >= 0);
+	//retCode = engine->RegisterObjectProperty("terrainSegmentOffset", "float y", asOFFSET(terrainSegmentOffset, _y)); assert(retCode >= 0);
 }
 
 void register_wrapper_functions_diag_generic(asIScriptEngine*& engine)
