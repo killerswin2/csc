@@ -136,15 +136,15 @@ int get_terrain_grid()
 }
 
 //@TODO vec2
-float get_terrain_height(float& x, float& y)
+float get_terrain_height(vector2& vec)
 {
-	return intercept::sqf::get_terrain_height({x, y});
+	return intercept::sqf::get_terrain_height(vec);
 }
 
 //@TODO vec2
-void get_terrain_segment_offset(float& x, float& y)
+vector2 get_terrain_segment_offset(vector2& vec)
 {
-	intercept::sqf::diag_get_terrain_segment_offset({x, y});
+	return intercept::sqf::diag_get_terrain_segment_offset(vec);
 }
 
 void light_new_load(std::string &filepath)
@@ -275,9 +275,9 @@ void register_wrapper_functions_diag_native(asIScriptEngine*& engine)
 	retCode = engine->RegisterGlobalFunction("float fpsmin()", asFUNCTION(fpsmin), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("float frameno()", asFUNCTION(frameno), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("int get_terrain_grid()", asFUNCTION(get_terrain_grid), asCALL_CDECL); assert(retCode >= 0);
-	retCode = engine->RegisterGlobalFunction("float get_terrain_height(float& in, float& in)", asFUNCTION(get_terrain_height), asCALL_CDECL); assert(retCode >= 0);
+	retCode = engine->RegisterGlobalFunction("float get_terrain_height(vector2 &in)", asFUNCTION(get_terrain_height), asCALL_CDECL); assert(retCode >= 0);
 
-	retCode = engine->RegisterGlobalFunction("void get_terrain_segment_offset(float& in, float& in)", asFUNCTION(get_terrain_segment_offset), asCALL_CDECL); assert(retCode >= 0);
+	retCode = engine->RegisterGlobalFunction("vector2 get_terrain_segment_offset(vector2 &in)", asFUNCTION(get_terrain_segment_offset), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("void light_new_load(string &in)", asFUNCTION(light_new_load), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("void list(string &in)", asFUNCTION(list), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("void log(string &in)", asFUNCTION(log), asCALL_CDECL); assert(retCode >= 0);
@@ -298,7 +298,11 @@ void register_wrapper_functions_diag_native(asIScriptEngine*& engine)
 	retCode = engine->RegisterGlobalFunction("bool is_file_patching_enabled()", asFUNCTION(is_file_patching_enabled), asCALL_CDECL); assert(retCode >= 0);
 	retCode = engine->RegisterGlobalFunction("void log_entities()", asFUNCTION(log_entities), asCALL_CDECL); assert(retCode >= 0);
 
-	////register objects here!
+	////register 
+	// 
+	// 
+	// 
+	// s here!
 	//retCode = engine->RegisterObjectType("activeMissionFSMs", sizeof(activeMissionFSMs), asOBJ_VALUE | asGetTypeTraits<activeMissionFSMs>()); assert(retCode >= 0);
 	//retCode = engine->RegisterObjectProperty("activeMissionFSMs", "string name", asOFFSET(activeMissionFSMs, _name)); assert(retCode >= 0);
 	//retCode = engine->RegisterObjectProperty("activeMissionFSMs", "string state", asOFFSET(activeMissionFSMs, _state)); assert(retCode >= 0);
