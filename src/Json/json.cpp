@@ -111,7 +111,7 @@ void json_object_creation_internal(const char * key, const game_value& element, 
 void json_game_data::json::pre_start()
 {
 	auto codeType = intercept::client::host::register_sqf_type("JSONHASHMAP"sv, "jsonHashMap"sv, "hashmap for json stuff", "jsonHashMap"sv, create_game_data_json);
-	game_data_json_type = codeType.second;
+	game_data_json_type = *codeType.second;
 
 	Commands& commands = Commands::get();
 	commands.addCommand("createJsonObject", "create a json object", userFunctionWrapper<create_json_object>, codeType.first);
@@ -1346,7 +1346,7 @@ game_value append_array_json_array(game_value_parameter leftArray, game_value_pa
 void json_game_data::jsonArray::pre_start()
 {
 	auto codeType = intercept::client::host::register_sqf_type("JSONARRAY"sv, "jsonArray"sv, "json array stuff", "jsonArray"sv, create_game_data_json_array);
-	game_data_json_array_type = codeType.second;
+	game_data_json_array_type = *codeType.second;
 
 	Commands& commands = Commands::get();
 	commands.addCommand("createJsonArray", "create a json array", userFunctionWrapper<create_json_array>, codeType.first);

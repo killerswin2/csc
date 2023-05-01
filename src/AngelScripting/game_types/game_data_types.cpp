@@ -7,8 +7,7 @@ void register_game_data_types_generic(asIScriptEngine*& engine)
 
 void register_game_data_types_native(asIScriptEngine*& engine)
 {
-    int retCode;
-    retCode = engine->SetDefaultNamespace(""); assert(retCode >= 0);
+    int retCode = engine->SetDefaultNamespace(""); assert(retCode >= 0);
 
     retCode = engine->RegisterObjectType("game_value", sizeof(game_value), asOBJ_REF); assert(retCode >= 0);
     retCode = engine->RegisterObjectType("object", sizeof(intercept::types::object), asOBJ_REF); assert(retCode >= 0);
@@ -24,7 +23,7 @@ void register_game_data_types_native(asIScriptEngine*& engine)
     retCode = engine->RegisterObjectType("rv_namespace", sizeof(intercept::types::rv_namespace), asOBJ_REF); assert(retCode >= 0);
     retCode = engine->RegisterObjectType("task", sizeof(intercept::types::task), asOBJ_REF); assert(retCode >= 0);
     retCode = engine->RegisterObjectType("rv_array", sizeof(auto_array<game_value>), asOBJ_REF); assert(retCode >= 0);
-    //retCode = engine->RegisterObjectType("rv_string", sizeof(intercept::types::task), asOBJ_REF); assert(retCode >= 0);
+    //retCode = engine->RegisterObjectType("rv_string", sizeof(r_string), asOBJ_REF); assert(retCode >= 0);
 
 
 }
